@@ -1,5 +1,7 @@
 package com.example.moviles.ui.Products.ui
 
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,28 +18,32 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import coil.compose.rememberImagePainter
-
-
-data class EditableProduct(val id: Int, val name: String, val price: String, val image: String)
+import com.example.moviles.apiService.RetroClient
+import com.example.moviles.apiService.ProductResponse
 
 @Composable
 fun EditDeleteProductScreen(navController: NavHostController) {
-    val products = listOf(
-        EditableProduct(1, "Producto 1", "$10.00", "url_img1"),
-        EditableProduct(2, "Producto 2", "$20.00", "url_img2"),
-        EditableProduct(3, "Producto 3", "$15.00", "url_img3")
+    val viewModel: EditDeleteProductsViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                return EditDeleteProductsViewModel(RetroClient.instance) as T
+            }
+        }
     )
 
     Surface(
@@ -57,11 +63,21 @@ fun EditDeleteProductScreen(navController: NavHostController) {
                 color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(16.dp))
+
+            if (viewModel.isLoading) {
+                CircularProgressIndicator()
+            }
+            if (viewModel.error != null) {
+                Text(text = "Error: ${viewModel.error}", color = MaterialTheme.colorScheme.error)
+            }
+            if(viewModel.deleteSuccess){
+                Text(text = "Producto eliminado con éxito", color = MaterialTheme.colorScheme.primary)
+            }
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(products) { product ->
-                    EditableProductCard(product, navController)
+                items(viewModel.products) { product ->
+                    EditableProductCard(product, navController,viewModel)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -76,9 +92,8 @@ fun EditDeleteProductScreen(navController: NavHostController) {
         }
     }
 }
-
 @Composable
-fun EditableProductCard(product: EditableProduct, navController: NavHostController) {
+fun EditableProductCard(product: ProductResponse, navController: NavHostController, viewModel: EditDeleteProductsViewModel) {
     Card(
         modifier = Modifier
             .fillMaxWidth(),
@@ -91,22 +106,28 @@ fun EditableProductCard(product: EditableProduct, navController: NavHostControll
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    painter = rememberImagePainter(data = product.image),
-                    contentDescription = "Product Image",
-                    modifier = Modifier
-                        .size(60.dp)
-                        .padding(end = 16.dp),
-                    contentScale = ContentScale.Crop
-                )
+                val imageBitmap = product.imagen?.let {
+                    val decodedBytes = Base64.decode(it, Base64.DEFAULT)
+                    BitmapFactory.decodeByteArray(decodedBytes,0,decodedBytes.size).asImageBitmap()
+                }
+                if (imageBitmap != null){
+                    Image(
+                        bitmap =  imageBitmap,
+                        contentDescription = "Product Image",
+                        modifier = Modifier
+                            .size(60.dp)
+                            .padding(end = 16.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
                 Column {
                     Text(
-                        text = product.name,
+                        text = product.nombre,
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Precio: ${product.price}",
+                        text = "Precio: ${product.precio}",
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Medium
                     )
@@ -118,25 +139,24 @@ fun EditableProductCard(product: EditableProduct, navController: NavHostControll
             ) {
                 Button(
                     onClick = {
-                        //TODO: Implementa la lógica de editar producto
-                        println("Producto a editar: id= ${product.id},  Nombre: ${product.name}")
                         navController.navigate("edit_single_product_screen/${product.id}")
                     },
+
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 ) {
                     Text(text = "Editar",  color = MaterialTheme.colorScheme.onPrimary)
                 }
+
+
                 Spacer(modifier = Modifier.padding(8.dp))
                 Button(
                     onClick = {
-                        //TODO: Implementa la lógica de eliminar producto
-                        println("Producto a eliminar: id = ${product.id} Nombre: ${product.name}")
+                        viewModel.deleteProduct(product.nombre)
                     },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-
-                    ) {
+                ) {
                     Text(text = "Eliminar", color = MaterialTheme.colorScheme.onError)
                 }
             }

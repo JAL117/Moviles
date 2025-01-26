@@ -1,5 +1,7 @@
 package com.example.moviles.ui.Products.ui
 
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,27 +18,33 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberImagePainter
-
-data class Product(val name: String, val price: String, val image:String)
+import com.example.moviles.apiService.RetroClient
+import com.example.moviles.apiService.ProductResponse
 
 @Composable
 fun ListProductsScreen(navController: NavHostController) {
-    val products = listOf(
-        Product("Producto 1", "$10.00", "url_img1"),
-        Product("Producto 2", "$20.00", "url_img2"),
-        Product("Producto 3", "$15.00", "url_img3")
+    val viewModel: ListProductsViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory{
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                return ListProductsViewModel(RetroClient.instance) as T
+            }
+        }
     )
 
     Surface(
@@ -56,10 +64,17 @@ fun ListProductsScreen(navController: NavHostController) {
                 color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(16.dp))
+            if (viewModel.isLoading){
+                CircularProgressIndicator()
+            }
+            if(viewModel.error!=null){
+                Text(text = "Error: ${viewModel.error}", color = MaterialTheme.colorScheme.error)
+            }
+
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ){
-                items(products) { product ->
+                items(viewModel.products) { product ->
                     ProductCard(product)
                 }
             }
@@ -76,9 +91,8 @@ fun ListProductsScreen(navController: NavHostController) {
         }
     }
 }
-
 @Composable
-fun ProductCard(product: Product) {
+fun ProductCard(product: ProductResponse) {
     Card(
         modifier = Modifier
             .fillMaxWidth(),
@@ -91,22 +105,30 @@ fun ProductCard(product: Product) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    painter = rememberImagePainter(data = product.image),
-                    contentDescription = "Product Image",
-                    modifier = Modifier
-                        .size(60.dp)
-                        .padding(end = 16.dp),
-                    contentScale = ContentScale.Crop
-                )
+                val imageBitmap = product.imagen?.let {
+                    val decodedBytes = Base64.decode(it, Base64.DEFAULT)
+                    BitmapFactory.decodeByteArray(decodedBytes,0,decodedBytes.size).asImageBitmap()
+                }
+                if (imageBitmap != null){
+                    Image(
+                        bitmap =  imageBitmap,
+                        contentDescription = "Product Image",
+                        modifier = Modifier
+                            .size(60.dp)
+                            .padding(end = 16.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+
                 Column {
                     Text(
-                        text = product.name,
+                        text = product.nombre,
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Precio: ${product.price}",
+                        text = "Precio: ${product.precio}",
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Medium
                     )

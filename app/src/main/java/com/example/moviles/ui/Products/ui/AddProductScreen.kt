@@ -49,6 +49,7 @@ import com.example.moviles.apiService.RetroClient
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.moviles.utils.bitmapToUri
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -225,22 +226,4 @@ fun AddProductScreen(navController: NavHostController) {
 
         }
     }
-}
-
-
-fun bitmapToUri(context: Context, bitmap: Bitmap): Uri {
-    val cachePath = File(context.cacheDir, "images")
-    cachePath.mkdirs()
-    val file = File(cachePath, "productImage.jpg")
-    var stream: OutputStream? = null
-    try {
-        stream = FileOutputStream(file)
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        return Uri.EMPTY
-    } finally {
-        stream?.close()
-    }
-    return  Uri.fromFile(file)
 }
