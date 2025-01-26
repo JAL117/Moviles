@@ -5,9 +5,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.moviles.apiService.LoginReq
+import com.example.moviles.apiService.LoginRes
+import com.example.moviles.apiService.RetroClient
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Response
 
 class LoginViewModel : ViewModel() {
 
@@ -24,6 +31,12 @@ class LoginViewModel : ViewModel() {
     val navigateToHome: SharedFlow<Boolean> = _navigateToHome.asSharedFlow()
 
     var errorEmail by mutableStateOf<String?>(null)
+        private set
+
+    var isLoading by mutableStateOf(false)
+        private set
+
+    var loginError by mutableStateOf<String?>(null)
         private set
 
     fun onEmailChanged(newEmail: String) {
@@ -51,14 +64,42 @@ class LoginViewModel : ViewModel() {
         loginEnabled = email.isNotBlank() && password.isNotBlank() && errorEmail == null
     }
 
-    suspend fun onLoginButtonClicked() {
-        // Simulación de la lógica de inicio de sesión
-        if (email == "jal@117.com" && password == "123456") {
-            // Si es exitoso, se emite evento de navegación
-            _navigateToHome.emit(true)
-        } else {
-            //Manejo de error
-            println("Inicio de sesión fallido")
+    fun onLoginButtonClicked() {
+        if (!loginEnabled) {
+            return
         }
+
+        isLoading = true
+        loginError = null
+
+        val credentials = LoginReq(email, password)
+        val call = RetroClient.instance.login(credentials)
+
+        call.enqueue(object : retrofit2.Callback<LoginRes> {
+            override fun onResponse(call: Call<LoginRes>, response: Response<LoginRes>) {
+                isLoading = false
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    println(body)
+                    if (body?.message == "Login exitoso") {
+                        viewModelScope.launch{
+                            _navigateToHome.emit(true)
+                        }
+                        println("Login con exito")
+                    } else {
+                        loginError = "Inicio de sesión fallido"
+                        println("Error, el body llegó vacío")
+                    }
+                } else {
+                    loginError = "Error del servidor: ${response.errorBody()?.string()}"
+                    println("Error del servidor: ${response.errorBody()?.string()}")
+                }
+            }
+            override fun onFailure(call: Call<LoginRes>, t: Throwable) {
+                isLoading = false
+                loginError = "Error en la conexión: ${t.message}"
+                println("Error en la conexión: ${t.message}")
+            }
+        })
     }
 }

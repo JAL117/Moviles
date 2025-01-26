@@ -51,7 +51,7 @@ fun LoginScreen(viewModel: LoginViewModel = viewModel(), navController: NavHostC
     val navigateToHome by viewModel.navigateToHome.collectAsState(initial = false)
     LaunchedEffect(navigateToHome) {
         if (navigateToHome) {
-            navController.navigate("home_screen") // Navegar a la otra vista
+            navController.navigate("home_screen")
         }
     }
 
