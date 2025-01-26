@@ -1,6 +1,7 @@
 package com.example.moviles.ui.Products.ui
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -41,9 +42,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberImagePainter
+import com.example.moviles.apiService.RetroClient
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +61,15 @@ fun AddProductScreen(navController: NavHostController) {
     var productPrice by remember { mutableStateOf("") }
     var productImageUri by remember { mutableStateOf<Uri?>(null) }
     val context = LocalContext.current
+
+    val viewModel: AddProductViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory{
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                return AddProductViewModel(RetroClient.instance) as T
+            }
+        }
+    )
+
 
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -65,7 +83,7 @@ fun AddProductScreen(navController: NavHostController) {
         ActivityResultContracts.TakePicturePreview()
     ) { bitmap ->
         bitmap?.let {
-            productImageUri = bitmapToUri(context, it)
+            productImageUri = bitmapToUri(context,bitmap)
         }
     }
 
@@ -96,6 +114,15 @@ fun AddProductScreen(navController: NavHostController) {
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
+            if(viewModel.isLoading){
+                CircularProgressIndicator()
+            }
+            if (viewModel.error != null) {
+                Text(text = "Error: ${viewModel.error}", color = MaterialTheme.colorScheme.error)
+            }
+            if(viewModel.success){
+                Text(text = "Producto agregado con éxito", color = MaterialTheme.colorScheme.primary)
+            }
             Card(modifier = Modifier
                 .fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
                 Column(modifier = Modifier.padding(16.dp)){
@@ -108,7 +135,7 @@ fun AddProductScreen(navController: NavHostController) {
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline,
 
-                        ),
+                            ),
                         shape = RoundedCornerShape(12.dp)
 
                     )
@@ -123,7 +150,7 @@ fun AddProductScreen(navController: NavHostController) {
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline,
 
 
-                        ),
+                            ),
                         shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -179,11 +206,8 @@ fun AddProductScreen(navController: NavHostController) {
 
             Button(
                 onClick = {
-                    //TODO: Implementa la lógica de añadir producto, la imagen estará en la variable productImageUri
-                    println(
-                        "Producto a agregar: Nombre: $productName, Precio: $productPrice, Imagen: $productImageUri"
-                    )
-                    navController.popBackStack()
+                    viewModel.addProduct(productName,productPrice,productImageUri,context)
+
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
@@ -204,14 +228,19 @@ fun AddProductScreen(navController: NavHostController) {
 }
 
 
-fun bitmapToUri(context: android.content.Context, bitmap: Bitmap): Uri {
-    val bytes = ByteArrayOutputStream()
-    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes)
-    val path = MediaStore.Images.Media.insertImage(
-        context.contentResolver,
-        bitmap,
-        "Title",
-        null
-    )
-    return Uri.parse(path)
+fun bitmapToUri(context: Context, bitmap: Bitmap): Uri {
+    val cachePath = File(context.cacheDir, "images")
+    cachePath.mkdirs()
+    val file = File(cachePath, "productImage.jpg")
+    var stream: OutputStream? = null
+    try {
+        stream = FileOutputStream(file)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        return Uri.EMPTY
+    } finally {
+        stream?.close()
+    }
+    return  Uri.fromFile(file)
 }

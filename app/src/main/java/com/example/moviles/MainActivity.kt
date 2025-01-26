@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(navController)
                         }
                         composable("add_product_screen") {
-                            AddProductScreen(navController)
+                            AddProductScreen(navController = navController)
                         }
                         composable("list_products_screen") {
                             ListProductsScreen(navController)
