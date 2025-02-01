@@ -6,7 +6,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moviles.apiService.ApiService
-import com.example.moviles.apiService.ProductResponse
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import kotlin.math.log

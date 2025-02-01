@@ -34,7 +34,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.moviles.apiService.RetroClient
-import com.example.moviles.apiService.ProductResponse
 
 @Composable
 fun EditDeleteProductScreen(navController: NavHostController) {

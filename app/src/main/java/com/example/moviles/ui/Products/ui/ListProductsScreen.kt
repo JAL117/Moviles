@@ -35,7 +35,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberImagePainter
 import com.example.moviles.apiService.RetroClient
-import com.example.moviles.apiService.ProductResponse
 
 @Composable
 fun ListProductsScreen(navController: NavHostController) {
