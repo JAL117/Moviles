@@ -1,4 +1,4 @@
-package com.example.moviles
+package com.example.moviles.ui.home.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -110,7 +110,13 @@ fun HomeScreen(navController: NavHostController) {
             }
 
             Button(
-                onClick = { navController.navigate("login_screen") },
+                onClick = {
+                    navController.navigate("login_screen") {
+                        popUpTo("login_screen") {
+                            inclusive = true
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(150.dp)

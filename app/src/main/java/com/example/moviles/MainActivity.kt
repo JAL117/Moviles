@@ -1,6 +1,5 @@
 package com.example.moviles
 
-import com.example.moviles.ui.Products.ui.EditDeleteProductScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,13 +12,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.moviles.ui.Products.ui.EditSingleProductScreen
-
-
-import com.example.moviles.ui.Products.ui.ListProductsScreen
 import com.example.moviles.ui.Products.ui.AddProductScreen
+import com.example.moviles.ui.Products.ui.EditDeleteProductScreen
+import com.example.moviles.ui.Products.ui.EditSingleProductScreen
+import com.example.moviles.ui.Products.ui.ListProductsScreen
 import com.example.moviles.ui.login.ui.LoginScreen
+import com.example.moviles.ui.register.ui.RegisterScreen
 import com.example.moviles.ui.theme.MovilesTheme
+import com.example.moviles.ui.home.ui.HomeScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,25 +35,27 @@ class MainActivity : ComponentActivity() {
                         composable("login_screen") {
                             LoginScreen(navController = navController)
                         }
+                        composable("register_screen"){
+                            RegisterScreen(navController = navController)
+                        }
                         composable("home_screen") {
-                            HomeScreen(navController)
+                            HomeScreen(navController = navController)
                         }
                         composable("add_product_screen") {
                             AddProductScreen(navController = navController)
                         }
                         composable("list_products_screen") {
-                            ListProductsScreen(navController)
+                            ListProductsScreen(navController = navController)
                         }
                         composable("edit_delete_product_screen") {
-                            EditDeleteProductScreen(navController)
+                            EditDeleteProductScreen(navController = navController)
                         }
                         composable(
                             route = "edit_single_product_screen/{productId}",
                             arguments = listOf(navArgument("productId") { type = NavType.StringType })
                         ) { backStackEntry ->
-                            EditSingleProductScreen(navController, backStackEntry.arguments?.getString("productId"))
+                            EditSingleProductScreen(navController = navController, productId = backStackEntry.arguments?.getString("productId") )
                         }
-
                     }
                 }
             }
